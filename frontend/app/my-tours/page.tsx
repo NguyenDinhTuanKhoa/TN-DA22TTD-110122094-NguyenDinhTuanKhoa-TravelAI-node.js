@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import TourDetailModal, { PRICE_CONFIG, useTourSaved } from '../components/TourDetailModal';
@@ -766,6 +766,148 @@ const PRICE_FILTERS = [
   { id: 'luxury', label: '💜 Cao cấp' },
 ];
 
+// ── Tour Showcase Hero (banner ảnh full-bleed xoay vòng, giống TravelShowcase trang chủ) ──
+function TourShowcase({ tours, onOpen }: { tours: Tour[]; onOpen: (t: Tour) => void }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [auto, setAuto] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const active = tours[activeIndex];
+
+  // Tự động chuyển tour mỗi 5s khi đang bật auto
+  useEffect(() => {
+    if (!auto || tours.length <= 1) return;
+    const id = setInterval(() => setActiveIndex((i) => (i + 1) % tours.length), 5000);
+    return () => clearInterval(id);
+  }, [auto, tours.length]);
+
+  const select = (i: number) => { setActiveIndex(i); setAuto(false); };
+  const scroll = (dir: 'left' | 'right') => {
+    scrollRef.current?.scrollBy({ left: dir === 'right' ? 220 : -220, behavior: 'smooth' });
+  };
+
+  if (!active) return null;
+
+  return (
+    <div className="relative h-[460px] sm:h-[520px] w-full overflow-hidden">
+      {/* Ảnh nền của tour đang active */}
+      <img
+        key={active.coverImage}
+        src={active.coverImage}
+        alt={active.title}
+        className="absolute inset-0 h-full w-full object-cover tour-hero-fade"
+      />
+      {/* Lớp phủ gradient cho dễ đọc chữ */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
+
+      {/* Counter góc trên phải */}
+      <div className="absolute top-5 right-5 z-20 rounded-full bg-black/40 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+        {String(activeIndex + 1).padStart(2, '0')} / {String(tours.length).padStart(2, '0')}
+      </div>
+
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl items-end justify-between gap-6 px-4 sm:px-6 lg:px-8 pb-10 lg:pb-12">
+        {/* Thông tin tour bên trái */}
+        <div className="max-w-2xl text-white">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold text-white shadow ${active.badgeColor}`}>
+              {active.badge}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
+              <span>📍</span>{active.region}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
+              <span>⏱️</span>{active.duration}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-amber-300 backdrop-blur">
+              ⭐ {active.rating.toFixed(1)} <span className="text-white/60">({active.reviewCount})</span>
+            </span>
+          </div>
+
+          <h2 className="mb-3 text-2xl font-black leading-tight drop-shadow sm:text-4xl lg:text-5xl">
+            <span className="mr-1.5">{active.categoryIcon}</span>{active.title}
+          </h2>
+
+          <p className="mb-6 max-w-xl text-sm leading-relaxed text-white/85 line-clamp-2 sm:text-base">
+            {active.description}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              onClick={() => onOpen(active)}
+              className="rounded-full bg-white px-6 py-3 font-bold text-gray-900 shadow-lg transition-all hover:scale-105"
+            >
+              Xem chi tiết →
+            </button>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xs text-white/70">Giá từ</span>
+              <span className="text-2xl font-black text-amber-300">{active.priceLabel}</span>
+            </div>
+            <button
+              onClick={() => setAuto((v) => !v)}
+              title={auto ? 'Tạm dừng tự động lướt' : 'Tự động lướt'}
+              className="ml-auto flex h-11 w-11 items-center justify-center rounded-full border-2 border-white/70 text-white transition-all hover:bg-white hover:text-gray-900"
+            >
+              {auto ? (
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
+              ) : (
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+              )}
+            </button>
+          </div>
+
+          {/* Dots cho mobile (thumbnail bị ẩn) */}
+          <div className="mt-6 flex gap-1.5 lg:hidden">
+            {tours.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => select(i)}
+                aria-label={`Tour ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all ${i === activeIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/50'}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Thumbnail các tour khác bên phải (desktop) */}
+        <div className="relative hidden lg:block">
+          <button
+            onClick={() => scroll('left')}
+            className="absolute -left-4 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-900 shadow-lg transition-all hover:scale-110 hover:bg-white"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <button
+            onClick={() => scroll('right')}
+            className="absolute -right-4 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-900 shadow-lg transition-all hover:scale-110 hover:bg-white"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
+
+          <div ref={scrollRef} className="flex max-w-[46vw] gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {tours.map((t, i) => (
+              <button
+                key={t.id}
+                onClick={() => select(i)}
+                className={`group relative h-[180px] w-[150px] flex-shrink-0 overflow-hidden rounded-2xl shadow-xl transition-all ${
+                  i === activeIndex ? 'scale-105 ring-4 ring-white' : 'opacity-80 hover:scale-105 hover:opacity-100'
+                }`}
+              >
+                <img src={t.coverImage} alt={t.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-3 text-left">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-white/70">{t.region}</p>
+                  <p className="line-clamp-2 text-xs font-bold leading-tight text-white">{t.title}</p>
+                  <p className="mt-1 text-[11px] font-black text-amber-300">{t.priceLabel}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Tour Card ─────────────────────────────────────────────────────────────────
 function TourCard({ tour, onOpen }: { tour: Tour; onOpen: () => void }) {
   const priceConf = PRICE_CONFIG[tour.priceRange];
@@ -879,37 +1021,40 @@ export default function MyToursPage() {
     return list;
   }, [activeCategory, sortBy, priceFilter]);
 
+  // Tour nổi bật cho banner: 6 tour nhiều lượt xem nhất
+  const featuredTours = useMemo(
+    () => [...COMMUNITY_TOURS].sort((a, b) => b.viewCount - a.viewCount).slice(0, 6),
+    []
+  );
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/40 to-violet-50/20">
       <Navbar />
 
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden pt-20 pb-4">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-16 -left-20 w-96 h-96 bg-sky-200/30 rounded-full blur-3xl" />
-          <div className="absolute -top-10 right-10 w-72 h-72 bg-violet-200/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-1/2 w-80 h-40 bg-amber-100/40 rounded-full blur-3xl" />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-          <div className="text-center mb-10">
-            {/* Pill */}
-            <div className="inline-flex items-center gap-2 px-5 py-2 bg-white/80 border border-sky-100 rounded-full shadow-sm mb-5">
+      <div className="pt-20">
+        {/* Header gọn */}
+        <div className="bg-gradient-to-br from-slate-50 via-white to-sky-50 px-4 py-8 sm:py-10">
+          <div className="mx-auto max-w-7xl">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 border border-sky-100 rounded-full shadow-sm mb-4">
               <span className="text-lg">🏕️</span>
               <span className="text-sm font-semibold text-sky-600 uppercase tracking-wide">Tours từ cộng đồng du lịch</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-gray-900 leading-tight mb-4">
-              Khám phá Tours<br />
+            <h1 className="text-3xl md:text-5xl font-black text-gray-900 leading-tight">
+              Khám phá Tours{' '}
               <span className="bg-gradient-to-r from-sky-500 via-violet-500 to-pink-500 bg-clip-text text-transparent">
                 được yêu thích nhất
               </span>
             </h1>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-500 text-base sm:text-lg max-w-2xl mt-3">
               Những hành trình thực tế từ du khách đã trải nghiệm — kèm bản đồ, trạm dừng và đánh giá chân thực. Chọn tour phù hợp và nhờ AI lên kế hoạch cho bạn.
             </p>
           </div>
-
         </div>
+
+        {/* Banner ảnh xoay vòng các tour nổi bật */}
+        <TourShowcase tours={featuredTours} onOpen={openTour} />
       </div>
 
       {/* ── Sticky Filter Bar ── */}
@@ -991,6 +1136,8 @@ export default function MyToursPage() {
       <style>{`
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes tourHeroFade { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
+        .tour-hero-fade { animation: tourHeroFade 0.7s ease; }
       `}</style>
     </div>
   );
