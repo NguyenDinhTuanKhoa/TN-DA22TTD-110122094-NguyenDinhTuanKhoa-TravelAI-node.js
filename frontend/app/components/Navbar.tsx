@@ -50,7 +50,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-8">
             {[
               { name: 'Trang chủ', href: '/' },
-              { name: '🏕️ Tours', href: '/my-tours' },
+              { name: 'Tours', href: '/my-tours' },
               { name: 'Bản Đồ', href: '/explore' },
               { name: 'Điểm Đến', href: '/destinations' },
               { name: 'Lịch Trình', href: '/itinerary' },
@@ -165,7 +165,7 @@ export default function Navbar() {
           <div className="md:hidden bg-white rounded-2xl shadow-xl p-6 mb-4 fade-in">
             {[
               { name: 'Trang chủ', href: '/' },
-              { name: '🏕️ Tours', href: '/my-tours' },
+              { name: 'Tours', href: '/my-tours' },
               { name: 'Bản Đồ', href: '/explore' },
               { name: 'Điểm Đến', href: '/destinations' },
               { name: 'Lịch Trình', href: '/itinerary' },
