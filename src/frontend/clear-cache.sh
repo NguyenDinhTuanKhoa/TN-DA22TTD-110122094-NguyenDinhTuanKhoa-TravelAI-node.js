@@ -7,7 +7,7 @@ echo ""
 # Check if in frontend directory
 if [ ! -f "package.json" ]; then
     echo "⚠️  Cảnh báo: Không phải thư mục frontend"
-    echo "Vui lòng chạy: cd d:/travelai/frontend"
+    echo "Vui lòng chạy: cd d:/travelai/src/frontend"
     exit 1
 fi
 

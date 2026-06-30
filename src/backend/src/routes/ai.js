@@ -196,6 +196,12 @@ router.post('/chat/stream', optionalAuth, streamLimiter, async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
+    // Heartbeat: flush 1 chunk (space) NGAY khi mở stream → client reset first-chunk timer ngay,
+    // tránh first-chunk-timeout do cold-start (buildSystemPrompt + lần gọi NVIDIA đầu chậm).
+    // Space bị trim ở client nên không hiển thị; KHÔNG cộng vào fullResponse nên không lưu DB.
+    res.write(`data: ${JSON.stringify({ content: ' ' })}\n\n`);
+    if (typeof res.flush === 'function') res.flush();
+
     const userId = req.user?._id || null;
     let fullResponse = '';
 

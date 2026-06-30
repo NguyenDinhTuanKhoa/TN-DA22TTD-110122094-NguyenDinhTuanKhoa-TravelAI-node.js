@@ -18,8 +18,6 @@ const nextConfig: NextConfig = {
     unoptimized: true, // Bypass Next.js Image Optimization để tránh timeout/403 từ external sources
   },
   
-  // Thêm turbopack config rỗng để tắt warning
-  turbopack: {},
 };
 
 export default nextConfig;

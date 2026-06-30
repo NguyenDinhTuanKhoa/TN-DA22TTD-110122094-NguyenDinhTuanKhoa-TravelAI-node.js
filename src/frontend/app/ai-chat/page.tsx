@@ -595,8 +595,8 @@ export default function AIChatPage() {
     // ── Abort + timeout setup ──
     const ac = new AbortController();
     abortControllerRef.current = ac;
-    const FIRST_CHUNK_TIMEOUT = 60000;   // 60s chờ chunk đầu tiên (NVIDIA cold-start có thể chậm)
-    const IDLE_CHUNK_TIMEOUT = 60000;    // 60s không có chunk nào → coi như stuck (reasoning model có thể pause lâu)
+    const FIRST_CHUNK_TIMEOUT = 120000;  // 120s chờ chunk đầu tiên (cold-start + reasoning model lần đầu có thể >60s)
+    const IDLE_CHUNK_TIMEOUT = 90000;    // 90s không có chunk nào → coi như stuck (reasoning model có thể pause lâu)
 
     let firstChunkTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
       ac.abort('first-chunk-timeout');
@@ -739,7 +739,7 @@ export default function AIChatPage() {
       const reason = ac.signal.reason;
       let errMsg = 'Có lỗi xảy ra. Vui lòng thử lại.';
       if (isAbort) {
-        if (reason === 'first-chunk-timeout') errMsg = 'AI phản hồi quá lâu (>60s). Có thể server đang quá tải.';
+        if (reason === 'first-chunk-timeout') errMsg = 'AI phản hồi quá lâu (>120s). Có thể server đang quá tải.';
         else if (reason === 'idle-timeout') errMsg = 'Mất kết nối với AI giữa chừng. Hãy thử lại.';
         else errMsg = 'Đã hủy yêu cầu.';
         // AbortError là behavior đã handle (timeout/user-cancel) → chỉ warn nhẹ, không phải error nghiêm trọng
